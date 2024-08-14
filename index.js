@@ -35,6 +35,13 @@ const run = async () => {
     // await client.connect();
 
     // Collections from the database here
+    const productCollection = client.db("everShop").collection("products");
+
+    //  Product related APIs
+    app.get("/products", async (req, res) => {
+      const result = await productCollection.find().toArray();
+      res.send(result);
+    });
 
     // Send a ping to confirm a successful connection
     // await client.db("admin").command({ ping: 1 });
