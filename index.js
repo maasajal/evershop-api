@@ -45,12 +45,25 @@ const run = async () => {
 
     app.get("/products", async (req, res) => {
       try {
-        const { page = 1, limit = 9, search = "", brand, category } = req.query;
+        const {
+          page = 1,
+          limit = 9,
+          search = "",
+          brand,
+          category,
+          priceRange,
+        } = req.query;
 
         const filter = {};
         if (search) filter.name = { $regex: search, $options: "i" };
         if (brand) filter.brand_name = brand;
         if (category) filter.category = category;
+
+        // Handle the priceRange filter
+        if (priceRange) {
+          const [minPrice, maxPrice] = priceRange.split("-").map(Number);
+          filter.price = { $gte: minPrice, $lte: maxPrice };
+        }
 
         // Convert page and limit to integers
         const pageInt = parseInt(page);
@@ -81,10 +94,17 @@ const run = async () => {
           ])
           .toArray();
 
+        const maxPriceProduct = await productCollection
+          .find({}, { projection: { price: 1 } }) // Only select the price field
+          .sort({ price: -1 }) // Sort by price in descending order
+          .limit(1) // Limit the result to one document
+          .toArray();
+
         // Extract brand names, category from the aggregation result
         const brands = brandsAggregation.map((brand) => brand._id);
         const categories = categoryAggregation.map((category) => category._id);
-        // console.log("category:", category);
+        const maxPrice =
+          maxPriceProduct.length > 0 ? maxPriceProduct[0].price : 0;
 
         res.send({
           total: totalProducts,
@@ -92,6 +112,7 @@ const run = async () => {
           products,
           brands,
           categories,
+          maxPrice,
         });
       } catch (err) {
         console.error("Failed to fetch products", err);
