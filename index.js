@@ -52,6 +52,8 @@ const run = async () => {
           brand,
           category,
           priceRange,
+          type,
+          order,
         } = req.query;
 
         const filter = {};
@@ -69,9 +71,18 @@ const run = async () => {
         const pageInt = parseInt(page);
         const limitInt = parseInt(limit);
 
+        // Determine the sorting options
+        const sort = {};
+        if (type === "price") {
+          sort.price = order === "asc" ? 1 : -1;
+        } else if (type === "date") {
+          sort.createdAt = order === "newest" ? -1 : 1;
+        }
+
         // Fetch the products with filtering, sorting, and pagination
         const productsCursor = productCollection
           .find(filter)
+          .sort(sort)
           .skip((pageInt - 1) * limitInt)
           .limit(limitInt);
 
