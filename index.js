@@ -45,15 +45,12 @@ const run = async () => {
 
     app.get("/products", async (req, res) => {
       try {
-        const {
-          page = 1,
-          limit = 12,
-          search = "",
-        } = req.query;
+        const { page = 1, limit = 9, search = "", brand } = req.query;
 
         const filter = {};
         if (search) filter.name = { $regex: search, $options: "i" };
-        
+        if (brand) filter.brand_name = brand;
+
         // Convert page and limit to integers
         const pageInt = parseInt(page);
         const limitInt = parseInt(limit);
@@ -67,10 +64,22 @@ const run = async () => {
         const products = await productsCursor.toArray(); // Convert cursor to array
         const totalProducts = await productCollection.countDocuments(filter);
 
+        // Fetch distinct brand names using aggregation
+        const brandsAggregation = await productCollection
+          .aggregate([
+            { $group: { _id: "$brand_name" } }, // Group by brand_name
+            { $sort: { _id: 1 } }, // Optional: sort alphabetically
+          ])
+          .toArray();
+
+        // Extract brand names from the aggregation result
+        const brands = brandsAggregation.map((brand) => brand._id);
+
         res.send({
           total: totalProducts,
           pages: Math.ceil(totalProducts / limitInt),
           products,
+          brands,
         });
       } catch (err) {
         console.error("Failed to fetch products", err);
