@@ -38,9 +38,42 @@ const run = async () => {
     const productCollection = client.db("everShop").collection("products");
 
     //  Product related APIs
+    // app.get("/products", async (req, res) => {
+    //   const result = await productCollection.find().toArray();
+    //   res.send(result);
+    // });
+
     app.get("/products", async (req, res) => {
-      const result = await productCollection.find().toArray();
-      res.send(result);
+      try {
+        const {
+          page = 1,
+          limit = 12,
+        } = req.query;
+
+        const filter = {};
+
+        // Convert page and limit to integers
+        const pageInt = parseInt(page);
+        const limitInt = parseInt(limit);
+
+        // Fetch the products with filtering, sorting, and pagination
+        const productsCursor = productCollection
+          .find(filter)
+          .skip((pageInt - 1) * limitInt)
+          .limit(limitInt);
+
+        const products = await productsCursor.toArray(); // Convert cursor to array
+        const totalProducts = await productCollection.countDocuments(filter);
+
+        res.send({
+          total: totalProducts,
+          pages: Math.ceil(totalProducts / limitInt),
+          products,
+        });
+      } catch (err) {
+        console.error("Failed to fetch products", err);
+        res.status(500).send("Server error");
+      }
     });
 
     // Send a ping to confirm a successful connection
