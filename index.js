@@ -36,6 +36,19 @@ const run = async () => {
 
     // Collections from the database here
     const productCollection = client.db("everShop").collection("products");
+    const userCollection = client.db("everShop").collection("users");
+
+    // User ralated APIs
+    app.post("/users", async (req, res) => {
+      const user = req.body;
+      const query = { email: user.email };
+      const existingUser = await userCollection.findOne(query);
+      if (existingUser) {
+        return res.send({ message: "User already exists", insertedId: null });
+      }
+      const result = await userCollection.insertOne(user);
+      res.send(result);
+    });
 
     //  Product related APIs
     // app.get("/products", async (req, res) => {
@@ -52,8 +65,8 @@ const run = async () => {
           brand,
           category,
           priceRange,
-          type,
-          order,
+          type = "date", // Default type to 'date'
+          order = "newest", // Default order to 'newest'
         } = req.query;
 
         const filter = {};
