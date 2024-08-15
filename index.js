@@ -48,10 +48,12 @@ const run = async () => {
         const {
           page = 1,
           limit = 12,
+          search = "",
         } = req.query;
 
         const filter = {};
-
+        if (search) filter.name = { $regex: search, $options: "i" };
+        
         // Convert page and limit to integers
         const pageInt = parseInt(page);
         const limitInt = parseInt(limit);
