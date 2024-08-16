@@ -61,6 +61,21 @@ const run = async () => {
     //   res.send(result);
     // });
 
+    app.get("/popular-products", async (req, res) => {
+      try {
+        // Filter to get products with ratings of 4.8 or higher
+        const filter = { ratings: { $gte: 4.8 } };
+
+        // Fetch the products matching the filter, limiting the result to 12 products
+        const result = await productCollection.find(filter).limit(12).toArray();
+
+        res.send(result);
+      } catch (error) {
+        console.error("Failed to fetch popular products", error);
+        res.status(500).send("Server error");
+      }
+    });
+
     app.get("/products", async (req, res) => {
       try {
         const {
