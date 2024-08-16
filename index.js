@@ -1,6 +1,8 @@
 const express = require("express");
 const cors = require("cors");
+const jwt = require("jsonwebtoken");
 const { MongoClient, ServerApiVersion, ObjectId } = require("mongodb");
+const { verifyToken } = require("./middleware");
 require("dotenv").config();
 
 const app = express();
@@ -55,6 +57,15 @@ const run = async () => {
       res.send(result);
     });
 
+    // JWT related API
+    app.post("/jwt", async (req, res) => {
+      const user = req.body;
+      const token = jwt.sign(user, process.env.ACCESS_TOKEN_SECRET, {
+        expiresIn: "5h",
+      });
+      res.send({ token });
+    });
+
     //  Product related APIs
     // app.get("/products", async (req, res) => {
     //   const result = await productCollection.find().toArray();
@@ -67,7 +78,11 @@ const run = async () => {
         const filter = { ratings: { $gte: 4.8 } };
 
         // Fetch the products matching the filter, limiting the result to 12 products
-        const result = await productCollection.find(filter).limit(12).toArray();
+        const result = await productCollection
+          .find(filter)
+          .sort({ createdAt: -1 }) // Sort by date in descending order | newest first
+          .limit(12)
+          .toArray();
 
         res.send(result);
       } catch (error) {
